@@ -29,9 +29,7 @@
           <br />
           助力高校学生提升面试能力，成功获得理想offer
         </p>
-        <router-link to="/login" class="hero-btn tech-button">
-          立即使用
-        </router-link>
+        <router-link to="/login" class="hero-btn tech-button"> 立即使用 </router-link>
       </div>
       <div class="hero-visual">
         <div class="floating-card card-1 glass-card hover-float">
@@ -53,11 +51,13 @@
     <section id="features" class="features-section">
       <h2 class="section-title tech-title">核心功能</h2>
       <div class="features-grid">
-        <div class="feature-card glass-card hover-float"
-             v-for="(feature, index) in features"
-             :key="index"
-             :class="{ 'animate__animated animate__fadeInUp': isFeatureVisible }"
-             :style="{ animationDelay: `${index * 0.1}s` }">
+        <div
+          class="feature-card glass-card hover-float"
+          v-for="(feature, index) in features"
+          :key="index"
+          :class="{ 'animate__animated animate__fadeInUp': isFeatureVisible }"
+          :style="{ animationDelay: `${index * 0.1}s` }"
+        >
           <el-icon :size="50" :color="feature.color">
             <component :is="feature.icon" />
           </el-icon>
@@ -71,10 +71,12 @@
     <section id="advantages" class="advantages-section">
       <h2 class="section-title tech-title">为什么选择我们</h2>
       <div class="advantages-content">
-        <div class="advantage-item"
-             v-for="(advantage, index) in advantages"
-             :key="index"
-             :class="{ 'animate__animated animate__fadeInLeft': isAdvantageVisible }">
+        <div
+          class="advantage-item"
+          v-for="(advantage, index) in advantages"
+          :key="index"
+          :class="{ 'animate__animated animate__fadeInLeft': isAdvantageVisible }"
+        >
           <div class="advantage-number">{{ String(index + 1).padStart(2, '0') }}</div>
           <div class="advantage-info">
             <h3>{{ advantage.title }}</h3>
@@ -88,10 +90,12 @@
     <section id="process" class="process-section">
       <h2 class="section-title tech-title">简单四步，开启面试之旅</h2>
       <div class="process-timeline">
-        <div class="process-item"
-             v-for="(step, index) in processSteps"
-             :key="index"
-             :class="{ 'animate__animated animate__fadeInRight': isProcessVisible }">
+        <div
+          class="process-item"
+          v-for="(step, index) in processSteps"
+          :key="index"
+          :class="{ 'animate__animated animate__fadeInRight': isProcessVisible }"
+        >
           <div class="process-number">{{ index + 1 }}</div>
           <div class="process-content glass-card">
             <h3>{{ step.title }}</h3>
@@ -113,17 +117,12 @@
 
 <script>
 export default {
-  name: 'HomeView'
+  name: 'HomeView',
 }
 </script>
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import {
-  Monitor,
-  Microphone,
-  VideoCamera,
-  Document
-} from '@element-plus/icons-vue'
+import { Monitor, Microphone, VideoCamera, Document } from '@element-plus/icons-vue'
 
 // 功能特点数据
 const features = ref([
@@ -131,66 +130,66 @@ const features = ref([
     icon: 'VideoCamera',
     title: '多模态分析',
     description: '综合分析语音、表情、肢体语言等多维度数据',
-    color: '#409eff'
+    color: '#409eff',
   },
   {
     icon: 'TrendCharts',
     title: '智能评测',
     description: '五维能力雷达图，精准定位优势与不足',
-    color: '#67c23a'
+    color: '#67c23a',
   },
   {
     icon: 'School',
     title: '个性化学习',
     description: '基于评测结果，提供定制化提升方案',
-    color: '#e6a23c'
+    color: '#e6a23c',
   },
   {
     icon: 'Timer',
     title: '实时反馈',
     description: '练习模式即时指导，快速提升面试技巧',
-    color: '#f56c6c'
-  }
+    color: '#f56c6c',
+  },
 ])
 
 // 优势数据
 const advantages = ref([
   {
     title: '讯飞AI技术支持',
-    description: '基于讯飞星火大模型，提供专业的语音识别和情感分析能力'
+    description: '基于讯飞星火大模型，提供专业的语音识别和情感分析能力',
   },
   {
     title: '真实面试场景',
-    description: '覆盖互联网、金融、教育等多个行业的典型面试场景'
+    description: '覆盖互联网、金融、教育等多个行业的典型面试场景',
   },
   {
     title: '全方位能力评估',
-    description: '从专业知识、表达能力、逻辑思维等多个维度综合评价'
+    description: '从专业知识、表达能力、逻辑思维等多个维度综合评价',
   },
   {
     title: '持续进步追踪',
-    description: '记录每次面试表现，可视化展示能力提升轨迹'
-  }
+    description: '记录每次面试表现，可视化展示能力提升轨迹',
+  },
 ])
 
 // 使用流程
 const processSteps = ref([
   {
     title: '注册登录',
-    description: '创建账号，完善个人信息'
+    description: '创建账号，完善个人信息',
   },
   {
     title: '上传简历',
-    description: '上传个人简历，获得个性化面试题库'
+    description: '上传个人简历，获得个性化面试题库',
   },
   {
     title: '模拟面试',
-    description: '选择岗位类型，开始AI面试官对话'
+    description: '选择岗位类型，开始AI面试官对话',
   },
   {
     title: '查看报告',
-    description: '获取详细评测报告和改进建议'
-  }
+    description: '获取详细评测报告和改进建议',
+  },
 ])
 
 // 滚动动画控制
@@ -235,7 +234,7 @@ onMounted(() => {
 
   // 添加平滑滚动
   const navLinks = document.querySelectorAll('a[href^="#"]')
-  navLinks.forEach(link => {
+  navLinks.forEach((link) => {
     link.addEventListener('click', smoothScroll)
   })
 })
@@ -413,7 +412,8 @@ onUnmounted(() => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -549,7 +549,7 @@ onUnmounted(() => {
 .process-content {
   flex: 1;
   padding: 30px;
-    margin-left: 80px;
+  margin-left: 80px;
   margin-right: 0;
 }
 
@@ -590,7 +590,7 @@ onUnmounted(() => {
     font-size: 2.5rem;
   }
 
-    .process-timeline {
+  .process-timeline {
     padding-left: 60px; /* 手机端也调整 padding-left，略小于桌面端 */
   }
 
