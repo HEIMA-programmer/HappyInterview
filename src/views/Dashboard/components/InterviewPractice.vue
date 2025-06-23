@@ -31,7 +31,13 @@
           </el-form-item>
 
           <el-form-item label="练习时长">
-            <el-slider v-model="settings.duration" :min="10" :max="60" :step="5" show-input />
+            <el-slider
+              v-model="settings.duration"
+              :min="10"
+              :max="60"
+              :step="5"
+              show-input
+            />
           </el-form-item>
 
           <el-form-item label="题目类型">
@@ -45,7 +51,9 @@
         </el-form>
 
         <div class="settings-actions">
-          <button class="start-btn tech-button" @click="startPractice">开始练习</button>
+          <button class="start-btn tech-button" @click="startPractice">
+            开始练习
+          </button>
         </div>
       </div>
 
@@ -96,14 +104,19 @@
         </div>
 
         <div class="control-right">
-          <el-button :type="isPaused ? 'success' : 'warning'" @click="togglePause">
+          <el-button
+            :type="isPaused ? 'success' : 'warning'"
+            @click="togglePause"
+          >
             <el-icon>
               <VideoPlay v-if="isPaused" />
               <VideoPause v-else />
             </el-icon>
             {{ isPaused ? '继续' : '暂停' }}
           </el-button>
-          <el-button type="danger" @click="endPractice"> 结束练习 </el-button>
+          <el-button type="danger" @click="endPractice">
+            结束练习
+          </el-button>
         </div>
       </div>
 
@@ -114,7 +127,9 @@
           <div v-if="!cameraEnabled" class="video-placeholder">
             <el-icon :size="60"><VideoCamera /></el-icon>
             <p>摄像头未开启</p>
-            <el-button type="primary" size="small" @click="enableCamera"> 开启摄像头 </el-button>
+            <el-button type="primary" size="small" @click="enableCamera">
+              开启摄像头
+            </el-button>
           </div>
         </div>
 
@@ -134,9 +149,7 @@
 
           <!-- AI助手 -->
           <div v-if="showHint" class="ai-hint animate__animated animate__fadeIn">
-            <h4>
-              <el-icon><Bulb /></el-icon> AI提示
-            </h4>
+            <h4><el-icon><Bulb /></el-icon> AI提示</h4>
             <p>{{ currentQuestion.hint }}</p>
           </div>
         </div>
@@ -145,21 +158,39 @@
       <!-- 回答控制 -->
       <div class="answer-controls glass-card">
         <div class="controls-main">
-          <el-button v-if="!isRecording" type="primary" size="large" @click="startRecording">
+          <el-button
+            v-if="!isRecording"
+            type="primary"
+            size="large"
+            @click="startRecording"
+          >
             <el-icon><Microphone /></el-icon>
             开始回答
           </el-button>
-          <el-button v-else type="danger" size="large" @click="stopRecording">
+          <el-button
+            v-else
+            type="danger"
+            size="large"
+            @click="stopRecording"
+          >
             <el-icon><VideoPause /></el-icon>
             结束回答
           </el-button>
 
-          <el-button type="info" size="large" @click="getHint" :disabled="hintUsed">
+          <el-button
+            type="info"
+            size="large"
+            @click="getHint"
+            :disabled="hintUsed"
+          >
             <el-icon><Bulb /></el-icon>
             获取提示
           </el-button>
 
-          <el-button size="large" @click="skipQuestion">
+          <el-button
+            size="large"
+            @click="skipQuestion"
+          >
             <el-icon><Right /></el-icon>
             跳过问题
           </el-button>
@@ -173,14 +204,16 @@
       </div>
 
       <!-- 实时反馈 -->
-      <div
-        v-if="currentFeedback"
-        class="feedback-section glass-card animate__animated animate__fadeIn"
-      >
+      <div v-if="currentFeedback" class="feedback-section glass-card animate__animated animate__fadeIn">
         <h3>AI反馈</h3>
         <div class="feedback-content">
           <div class="feedback-score">
-            <el-rate v-model="currentFeedback.score" disabled show-score text-color="#ff9900" />
+            <el-rate
+              v-model="currentFeedback.score"
+              disabled
+              show-score
+              text-color="#ff9900"
+            />
           </div>
           <div class="feedback-text">
             <p><strong>优点：</strong>{{ currentFeedback.pros }}</p>
@@ -188,7 +221,9 @@
             <p><strong>参考答案：</strong>{{ currentFeedback.reference }}</p>
           </div>
         </div>
-        <el-button type="primary" @click="nextQuestion"> 下一题 </el-button>
+        <el-button type="primary" @click="nextQuestion">
+          下一题
+        </el-button>
       </div>
     </div>
   </div>
@@ -210,7 +245,7 @@ import {
   User,
   Microphone,
   Bulb,
-  Right,
+  Right
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -228,7 +263,7 @@ const settings = ref({
   position: 'frontend',
   difficulty: 'medium',
   duration: 30,
-  questionTypes: ['behavioral', 'technical'],
+  questionTypes: ['behavioral', 'technical']
 })
 
 // 视频相关
@@ -241,7 +276,7 @@ const totalQuestions = ref(5)
 const currentQuestion = ref({
   text: '请做一下自我介绍，包括您的教育背景、工作经验和技能特长。',
   hint: '建议按照"个人信息-教育背景-项目经验-技能特长-职业规划"的结构来组织回答，时间控制在2-3分钟。',
-  type: 'behavioral',
+  type: 'behavioral'
 })
 const currentFeedback = ref(null)
 
@@ -254,28 +289,28 @@ const questions = [
   {
     text: '请做一下自我介绍，包括您的教育背景、工作经验和技能特长。',
     hint: '建议按照"个人信息-教育背景-项目经验-技能特长-职业规划"的结构来组织回答。',
-    type: 'behavioral',
+    type: 'behavioral'
   },
   {
     text: '说说您对前端开发的理解，以及您认为一个优秀的前端工程师应该具备哪些能力？',
     hint: '可以从技术能力、工程能力、协作能力、学习能力等多个维度来回答。',
-    type: 'technical',
+    type: 'technical'
   },
   {
     text: '请介绍一个您最有成就感的项目，包括项目背景、您的角色和贡献。',
     hint: '使用STAR法则：Situation（情境）、Task（任务）、Action（行动）、Result（结果）。',
-    type: 'project',
+    type: 'project'
   },
   {
     text: '当您与团队成员意见不一致时，您会如何处理？',
     hint: '展示您的沟通能力、团队协作精神和解决冲突的能力。',
-    type: 'situational',
+    type: 'situational'
   },
   {
     text: '您有什么想问我的吗？',
     hint: '可以询问公司文化、团队情况、项目挑战、职业发展等方面的问题。',
-    type: 'behavioral',
-  },
+    type: 'behavioral'
+  }
 ]
 
 // 开始练习
@@ -288,8 +323,8 @@ const startPractice = async () => {
       {
         confirmButtonText: '继续练习',
         cancelButtonText: '去上传简历',
-        type: 'warning',
-      },
+        type: 'warning'
+      }
     ).catch(() => false)
 
     if (!confirm) {
@@ -308,7 +343,7 @@ const enableCamera = async () => {
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       video: true,
-      audio: true,
+      audio: true
     })
     if (videoRef.value) {
       videoRef.value.srcObject = mediaStream
@@ -357,8 +392,7 @@ const stopRecording = () => {
       score: 4,
       pros: '回答结构清晰，表达流畅，重点突出。',
       cons: '可以增加一些具体的案例来支撑观点，让回答更有说服力。',
-      reference:
-        '参考答案：应该从个人基本信息开始，然后介绍教育背景和主要技能，接着重点说明相关项目经验，最后表达对应聘岗位的兴趣和匹配度。',
+      reference: '参考答案：应该从个人基本信息开始，然后介绍教育背景和主要技能，接着重点说明相关项目经验，最后表达对应聘岗位的兴趣和匹配度。'
     }
   }, 1500)
 }
@@ -390,16 +424,20 @@ const nextQuestion = () => {
 
 // 结束练习
 const endPractice = async () => {
-  const confirm = await ElMessageBox.confirm('确定要结束本次练习吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  }).catch(() => false)
+  const confirm = await ElMessageBox.confirm(
+    '确定要结束本次练习吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).catch(() => false)
 
   if (confirm) {
     // 清理资源
     if (mediaStream) {
-      mediaStream.getTracks().forEach((track) => track.stop())
+      mediaStream.getTracks().forEach(track => track.stop())
     }
     if (timerInterval) {
       clearInterval(timerInterval)
@@ -413,7 +451,7 @@ const endPractice = async () => {
 // 生命周期
 onUnmounted(() => {
   if (mediaStream) {
-    mediaStream.getTracks().forEach((track) => track.stop())
+    mediaStream.getTracks().forEach(track => track.stop())
   }
   if (timerInterval) {
     clearInterval(timerInterval)

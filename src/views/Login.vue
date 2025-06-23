@@ -134,10 +134,9 @@
 
 <script>
 export default {
-  name: 'LoginPage'
+  name: 'UserLogin'
 }
 </script>
-
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'

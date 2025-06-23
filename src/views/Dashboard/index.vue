@@ -156,7 +156,6 @@ export default {
   name: 'DashboardIndex'
 }
 </script>
-
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -173,7 +172,7 @@ import {
   SwitchButton,
   ArrowDown,
   Expand,
-  Fold,
+  Fold
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -484,7 +483,6 @@ onMounted(() => {
   font-weight: bold;
   background: var(--gradient-tech);
   -webkit-background-clip: text;
-  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 10px;
 }

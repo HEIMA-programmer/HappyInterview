@@ -10,18 +10,18 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: Home,
+      component: Home
     },
     {
       path: '/login',
       name: 'login',
-      component: Login,
+      component: Login
     },
     {
       path: '/profile-setup',
       name: 'profileSetup',
       component: Profile,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true }
     },
     {
       path: '/dashboard',
@@ -32,56 +32,56 @@ const router = createRouter({
         {
           path: 'basic-info',
           name: 'basicInfo',
-          component: () => import('../views/Dashboard/components/BasicInfo.vue'),
+          component: () => import('../views/Dashboard/components/BasicInfo.vue')
         },
         {
           path: 'resume-manage',
           name: 'resumeManage',
-          component: () => import('../views/Dashboard/components/ResumeManage.vue'),
+          component: () => import('../views/Dashboard/components/ResumeManage.vue')
         },
         {
           path: 'resume-optimize',
           name: 'resumeOptimize',
-          component: () => import('../views/Dashboard/components/ResumeOptimize.vue'),
+          component: () => import('../views/Dashboard/components/ResumeOptimize.vue')
         },
         {
           path: 'interview-performance',
           name: 'interviewPerformance',
-          component: () => import('../views/Dashboard/components/InterviewPerformance.vue'),
+          component: () => import('../views/Dashboard/components/InterviewPerformance.vue')
         },
         {
           path: 'position/:type',
           name: 'positionInfo',
-          component: () => import('../views/Dashboard/components/PositionInfo.vue'),
+          component: () => import('../views/Dashboard/components/PositionInfo.vue')
         },
         {
           path: 'interview-practice',
           name: 'interviewPractice',
-          component: () => import('../views/Dashboard/components/InterviewPractice.vue'),
+          component: () => import('../views/Dashboard/components/InterviewPractice.vue')
         },
         {
           path: 'interview-simulation',
           name: 'interviewSimulation',
-          component: () => import('../views/Dashboard/components/InterviewSimulation.vue'),
+          component: () => import('../views/Dashboard/components/InterviewSimulation.vue')
         },
         {
           path: 'history',
           name: 'history',
-          component: () => import('../views/Dashboard/components/History.vue'),
+          component: () => import('../views/Dashboard/components/History.vue')
         },
         {
           path: 'knowledge-base',
           name: 'knowledgeBase',
-          component: () => import('../views/Dashboard/components/KnowledgeBase.vue'),
+          component: () => import('../views/Dashboard/components/KnowledgeBase.vue')
         },
         {
           path: 'personalized-learning',
           name: 'personalizedLearning',
-          component: () => import('../views/Dashboard/components/PersonalizedLearning.vue'),
-        },
-      ],
-    },
-  ],
+          component: () => import('../views/Dashboard/components/PersonalizedLearning.vue')
+        }
+      ]
+    }
+  ]
 })
 
 // 路由守卫
@@ -89,7 +89,7 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
   const hasProfile = localStorage.getItem('hasProfile') === 'true'
 
-  if (to.matched.some((record) => record.meta.requiresAuth)) {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isAuthenticated) {
       next('/login')
     } else if (!hasProfile && to.name !== 'profileSetup') {
