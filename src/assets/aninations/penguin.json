@@ -1,0 +1,98 @@
+{
+  "animations": {
+    "idle": {
+      "description": "企鹅默认站立状态",
+      "frames": {
+        "body": {
+          "scale": [1, 1],
+          "rotation": 0
+        },
+        "eyes": {
+          "open": true,
+          "blink": {
+            "interval": 3000,
+            "duration": 200
+          }
+        },
+        "wings": {
+          "position": "down",
+          "animation": "slight_wave"
+        }
+      }
+    },
+    "curious": {
+      "description": "企鹅好奇状态（选择专业时）",
+      "frames": {
+        "body": {
+          "scale": [1.05, 1.05],
+          "rotation": [-5, 5],
+          "animation": "tilt_head"
+        },
+        "eyes": {
+          "open": true,
+          "size": 1.2,
+          "animation": "look_around"
+        },
+        "wings": {
+          "position": "mid",
+          "animation": "flap_slight"
+        }
+      }
+    },
+    "shy": {
+      "description": "企鹅害羞状态（输入密码时）",
+      "frames": {
+        "body": {
+          "scale": [0.95, 0.95],
+          "rotation": 0
+        },
+        "eyes": {
+          "open": false,
+          "covered": true
+        },
+        "wings": {
+          "position": "cover_eyes",
+          "animation": "cover_motion"
+        }
+      }
+    },
+    "happy": {
+      "description": "企鹅开心状态（完成填写时）",
+      "frames": {
+        "body": {
+          "scale": [1.1, 0.9],
+          "animation": "bounce"
+        },
+        "eyes": {
+          "open": true,
+          "shape": "smile"
+        },
+        "wings": {
+          "position": "up",
+          "animation": "wave_happy"
+        }
+      }
+    },
+    "thinking": {
+      "description": "企鹅思考状态（填写其他信息时）",
+      "frames": {
+        "body": {
+          "scale": [1, 1],
+          "rotation": 0
+        },
+        "eyes": {
+          "open": true,
+          "animation": "look_up"
+        },
+        "wings": {
+          "position": "chin",
+          "animation": "tap"
+        }
+      }
+    }
+  },
+  "transitions": {
+    "duration": 300,
+    "easing": "cubic-bezier(0.4, 0, 0.2, 1)"
+  }
+}

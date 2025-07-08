@@ -13,11 +13,11 @@
       <div class="header-right">
         <el-button text @click="showGuide">
           <el-icon><QuestionFilled /></el-icon>
-          使用指南
+          <span class="hide-on-mobile">使用指南</span>
         </el-button>
         <el-button text @click="showContact">
           <el-icon><Phone /></el-icon>
-          联系我们
+          <span class="hide-on-mobile">联系我们</span>
         </el-button>
 
         <el-dropdown class="user-dropdown">
@@ -25,7 +25,7 @@
             <el-avatar :size="32" :src="userAvatar">
               <el-icon><UserFilled /></el-icon>
             </el-avatar>
-            <span class="username">{{ username }}</span>
+            <span class="username hide-on-mobile">{{ username }}</span>
             <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
@@ -49,65 +49,68 @@
     </header>
 
     <div class="dashboard-body">
-      <!-- 侧边栏 -->
+      <!-- 侧边栏 - 固定定位 -->
       <aside class="dashboard-sidebar glass-card" :class="{ collapsed: sidebarCollapsed }">
-        <el-menu
-          :default-active="activeMenu"
-          class="sidebar-menu"
-          :collapse="sidebarCollapsed"
-          router
-        >
-          <!-- 您的资料 -->
-          <el-sub-menu index="profile">
-            <template #title>
-              <el-icon><UserFilled /></el-icon>
-              <span>您的资料</span>
-            </template>
-            <el-menu-item index="/dashboard/basic-info">基本资料</el-menu-item>
-            <el-menu-item index="/dashboard/resume-manage">管理简历</el-menu-item>
-            <el-menu-item index="/dashboard/resume-optimize">优化简历</el-menu-item>
-            <el-menu-item index="/dashboard/interview-performance">面试表现</el-menu-item>
-          </el-sub-menu>
+        <div class="sidebar-content">
+          <el-menu
+            :default-active="activeMenu"
+            class="sidebar-menu"
+            :collapse="sidebarCollapsed"
+            router
+            @select="handleMenuSelect"
+          >
+            <!-- 您的资料 -->
+            <el-sub-menu index="profile">
+              <template #title>
+                <el-icon><UserFilled /></el-icon>
+                <span>您的资料</span>
+              </template>
+              <el-menu-item index="/dashboard/basic-info">基本资料</el-menu-item>
+              <el-menu-item index="/dashboard/resume-manage">管理简历</el-menu-item>
+              <el-menu-item index="/dashboard/resume-optimize">优化简历</el-menu-item>
+              <el-menu-item index="/dashboard/interview-performance">面试表现</el-menu-item>
+            </el-sub-menu>
 
-          <!-- 岗位信息 -->
-          <el-sub-menu index="position">
-            <template #title>
-              <el-icon><Briefcase /></el-icon>
-              <span>岗位信息</span>
-            </template>
-            <el-menu-item index="/dashboard/position/it">互联网IT</el-menu-item>
-            <el-menu-item index="/dashboard/position/finance">金融</el-menu-item>
-            <el-menu-item index="/dashboard/position/education">教育</el-menu-item>
-          </el-sub-menu>
+            <!-- 岗位信息 -->
+            <el-sub-menu index="position">
+              <template #title>
+                <el-icon><Briefcase /></el-icon>
+                <span>岗位信息</span>
+              </template>
+              <el-menu-item index="/dashboard/position/it">互联网IT</el-menu-item>
+              <el-menu-item index="/dashboard/position/finance">金融</el-menu-item>
+              <el-menu-item index="/dashboard/position/education">教育</el-menu-item>
+            </el-sub-menu>
 
-          <!-- 智能面试 -->
-          <el-sub-menu index="interview">
-            <template #title>
-              <el-icon><VideoCamera /></el-icon>
-              <span>智能面试</span>
-            </template>
-            <el-menu-item index="/dashboard/interview-practice">面试练习</el-menu-item>
-            <el-menu-item index="/dashboard/interview-simulation">面试模拟</el-menu-item>
-            <el-menu-item index="/dashboard/history">历史会话</el-menu-item>
-          </el-sub-menu>
+            <!-- 智能面试 -->
+            <el-sub-menu index="interview">
+              <template #title>
+                <el-icon><VideoCamera /></el-icon>
+                <span>智能面试</span>
+              </template>
+              <el-menu-item index="/dashboard/interview-practice">面试练习</el-menu-item>
+              <el-menu-item index="/dashboard/interview-simulation">面试模拟</el-menu-item>
+              <el-menu-item index="/dashboard/history">历史会话</el-menu-item>
+            </el-sub-menu>
 
-          <!-- 学习空间 -->
-          <el-sub-menu index="learning">
-            <template #title>
-              <el-icon><Reading /></el-icon>
-              <span>学习空间</span>
-            </template>
-            <el-menu-item index="/dashboard/knowledge-base">知识库</el-menu-item>
-            <el-menu-item index="/dashboard/personalized-learning">个性化提升</el-menu-item>
-          </el-sub-menu>
-        </el-menu>
+            <!-- 学习空间 -->
+            <el-sub-menu index="learning">
+              <template #title>
+                <el-icon><Reading /></el-icon>
+                <span>学习空间</span>
+              </template>
+              <el-menu-item index="/dashboard/knowledge-base">知识库</el-menu-item>
+              <el-menu-item index="/dashboard/personalized-learning">个性化提升</el-menu-item>
+            </el-sub-menu>
+          </el-menu>
+        </div>
       </aside>
 
       <!-- 主内容区 -->
-      <main class="dashboard-main">
+      <main class="dashboard-main" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
         <div class="main-content">
           <!-- 首次显示欢迎页面 -->
-          <div v-if="showWelcome" class="welcome-section animate__animated animate__fadeIn">
+          <div v-if="showWelcome && currentPath === '/dashboard'" class="welcome-section animate__animated animate__fadeIn">
             <h2 class="welcome-title tech-title">欢迎使用AI面试智能体</h2>
             <p class="welcome-subtitle">让我们开始您的面试提升之旅</p>
 
@@ -144,18 +147,13 @@
           </div>
 
           <!-- 路由内容 -->
-          <router-view v-else />
+          <router-view />
         </div>
       </main>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'DashboardIndex'
-}
-</script>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -172,7 +170,10 @@ import {
   SwitchButton,
   ArrowDown,
   Expand,
-  Fold
+  Fold,
+  DocumentAdd,
+  DataAnalysis,
+  Promotion
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -186,6 +187,7 @@ const userAvatar = ref('')
 
 // 计算属性
 const activeMenu = computed(() => route.path)
+const currentPath = computed(() => route.path)
 
 // 引导步骤
 const guideSteps = ref([
@@ -228,6 +230,7 @@ const toggleSidebar = () => {
 }
 
 const showGuide = () => {
+  // TODO: 显示使用指南
   ElMessage.info('使用指南功能开发中...')
 }
 
@@ -240,6 +243,7 @@ const viewProfile = () => {
 }
 
 const showSettings = () => {
+  // TODO: 显示账号设置
   ElMessage.info('账号设置功能开发中...')
 }
 
@@ -265,12 +269,17 @@ const navigateTo = (route) => {
   router.push(route)
 }
 
-// 监听路由变化
+// 菜单选择处理（新增）
+const handleMenuSelect = () => {
+  showWelcome.value = false
+}
+
+// 修改路由监听
 watch(() => route.path, (newPath) => {
   if (newPath !== '/dashboard') {
     showWelcome.value = false
   }
-})
+}, { immediate: true }) // 确保组件初始化时也执行一次
 
 // 生命周期
 onMounted(() => {
@@ -278,6 +287,10 @@ onMounted(() => {
   if (route.path !== '/dashboard') {
     showWelcome.value = false
   }
+
+  // 输出调试信息
+  console.log('Dashboard 组件已加载，当前路径:', route.path)
+  console.log('showWelcome 状态:', showWelcome.value)
 
   // 加载用户信息
   const userProfile = localStorage.getItem('userProfile')
@@ -296,17 +309,19 @@ onMounted(() => {
   flex-direction: column;
 }
 
-/* 顶部导航栏 */
+/* 顶部导航栏 - 固定定位 */
 .dashboard-header {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  margin: 10px;
-  position: sticky;
-  top: 10px;
-  z-index: 100;
+  z-index: 1000;
+  backdrop-filter: blur(20px);
 }
 
 .header-left {
@@ -322,6 +337,7 @@ onMounted(() => {
 
 .menu-toggle:hover {
   color: var(--primary-color);
+  transform: rotate(180deg);
 }
 
 .app-title {
@@ -359,19 +375,51 @@ onMounted(() => {
 .dashboard-body {
   flex: 1;
   display: flex;
-  gap: 10px;
-  padding: 0 10px 10px;
+  padding-top: 80px; /* 顶部导航栏高度 + 间距 */
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* 侧边栏 */
+/* 侧边栏 - 固定定位 */
 .dashboard-sidebar {
+  position: fixed;
+  left: 10px;
+  top: 80px;
+  bottom: 10px;
   width: 250px;
   transition: width 0.3s ease;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-sidebar.collapsed {
   width: 64px;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 自定义滚动条 */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-menu {
@@ -399,11 +447,20 @@ onMounted(() => {
 /* 主内容区 */
 .dashboard-main {
   flex: 1;
+  margin-left: 270px; /* 侧边栏宽度 + 间距 */
+  margin-right: 10px;
+  margin-bottom: 10px;
   overflow-y: auto;
+  transition: margin-left 0.3s ease;
+}
+
+.dashboard-main.sidebar-collapsed {
+  margin-left: 84px; /* 折叠后的侧边栏宽度 + 间距 */
 }
 
 .main-content {
   padding: 20px;
+  min-height: calc(100vh - 100px);
 }
 
 /* 欢迎页面 */
@@ -491,24 +548,52 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-/* 响应式设计 */
+/* 隐藏在移动端 */
 @media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 992px) {
   .dashboard-sidebar {
     position: fixed;
-    left: -250px;
-    height: 100vh;
-    z-index: 1000;
+    left: -270px;
+    z-index: 999;
+    transition: left 0.3s ease;
   }
 
   .dashboard-sidebar:not(.collapsed) {
     left: 0;
+    box-shadow: 10px 0 20px rgba(0, 0, 0, 0.3);
   }
 
-  .header-right .el-button-group {
-    display: none;
+  .dashboard-main {
+    margin-left: 10px;
+  }
+
+  .dashboard-main.sidebar-collapsed {
+    margin-left: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    left: 5px;
+    right: 5px;
+    top: 5px;
+  }
+
+  .dashboard-body {
+    padding-top: 70px;
   }
 
   .guide-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-stats {
     grid-template-columns: 1fr;
   }
 }

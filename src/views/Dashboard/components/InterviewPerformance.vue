@@ -66,7 +66,7 @@
             v-for="period in periods"
             :key="period.value"
             :type="selectedPeriod === period.value ? 'primary' : ''"
-            @click="selectedPeriod = period.value"
+            @click="changePeriod(period.value)"
             size="small"
           >
             {{ period.label }}
@@ -121,6 +121,11 @@
               </li>
             </ul>
           </div>
+          <div class="metric-actions">
+            <el-button size="small" @click="startTargetedPractice(metric.name)">
+              针对练习
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -129,7 +134,7 @@
     <div class="trend-section glass-card">
       <div class="section-header">
         <h3>能力提升趋势</h3>
-        <el-select v-model="trendDimension" size="small">
+        <el-select v-model="trendDimension" size="small" @change="updateTrendChart">
           <el-option label="综合评分" value="overall" />
           <el-option label="专业知识" value="professional" />
           <el-option label="表达能力" value="expression" />
@@ -160,7 +165,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="200">
           <template #default="scope">
             <el-button size="small" @click="viewDetail(scope.row)">
               查看详情
@@ -193,7 +198,7 @@
               v-if="advice.action"
               type="text"
               size="small"
-              @click="handleAdviceAction(advice.action)"
+              @click="handleAdviceAction(advice.action, advice.actionData)"
             >
               {{ advice.actionText }} →
             </el-button>
@@ -201,27 +206,150 @@
         </el-alert>
       </div>
     </div>
+
+    <!-- 详情对话框 -->
+    <el-dialog
+      v-model="showDetailDialog"
+      title="面试详情"
+      width="80%"
+      top="5vh"
+    >
+      <div class="detail-content" v-if="currentRecord">
+        <!-- 基本信息 -->
+        <div class="detail-section">
+          <h4>基本信息</h4>
+          <el-descriptions :column="3" border>
+            <el-descriptions-item label="面试类型">
+              {{ currentRecord.type === 'simulation' ? '模拟面试' : '练习模式' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="面试公司">
+              {{ currentRecord.company }}
+            </el-descriptions-item>
+            <el-descriptions-item label="应聘岗位">
+              {{ currentRecord.position }}
+            </el-descriptions-item>
+            <el-descriptions-item label="面试时间">
+              {{ formatDate(currentRecord.date) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="面试时长">
+              {{ currentRecord.duration }}
+            </el-descriptions-item>
+            <el-descriptions-item label="综合评分">
+              {{ currentRecord.score }}分
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 详细分析 -->
+        <div class="detail-section">
+          <h4>详细分析</h4>
+          <div class="analysis-charts">
+            <div class="chart-container">
+              <h5>能力雷达图</h5>
+              <div ref="detailRadarChart" class="detail-radar-chart"></div>
+            </div>
+            <div class="chart-container">
+              <h5>表现时间线</h5>
+              <div ref="timelineChart" class="timeline-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 问答记录 -->
+        <div class="detail-section">
+          <h4>问答记录</h4>
+          <el-timeline>
+            <el-timeline-item
+              v-for="(qa, index) in currentRecord.qaRecords"
+              :key="index"
+              :timestamp="qa.timestamp"
+            >
+              <div class="qa-item">
+                <div class="question">
+                  <el-icon><QuestionFilled /></el-icon>
+                  <span>{{ qa.question }}</span>
+                </div>
+                <div class="answer">
+                  <el-icon><Comment /></el-icon>
+                  <span>{{ qa.answer }}</span>
+                </div>
+                <div class="qa-feedback" v-if="qa.feedback">
+                  <el-tag type="info" size="small">AI反馈</el-tag>
+                  <span>{{ qa.feedback }}</span>
+                </div>
+              </div>
+            </el-timeline-item>
+          </el-timeline>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 回放对话框 -->
+    <el-dialog
+      v-model="showReplayDialog"
+      title="面试回放"
+      width="90%"
+      top="5vh"
+    >
+      <div class="replay-content">
+        <div class="video-container">
+          <video
+            ref="replayVideo"
+            controls
+            class="replay-video"
+            @loadedmetadata="onVideoLoaded"
+          >
+            <source :src="replayVideoSrc" type="video/mp4">
+            您的浏览器不支持视频播放
+          </video>
+        </div>
+        <div class="replay-controls">
+          <el-button @click="playFromTimestamp('00:05:30')">跳转到自我介绍</el-button>
+          <el-button @click="playFromTimestamp('00:12:15')">跳转到技术问答</el-button>
+          <el-button @click="playFromTimestamp('00:18:45')">跳转到项目介绍</el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-
+import {
+  Reading,
+  ChatLineSquare,
+  TrendCharts,
+  Timer,
+  Trophy,
+  QuestionFilled,
+  Comment
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 // 图表实例
 let radarChartInstance = null
 let trendChartInstance = null
+let detailRadarChartInstance = null
+let timelineChartInstance = null
+
 const radarChart = ref(null)
 const trendChart = ref(null)
+const detailRadarChart = ref(null)
+const timelineChart = ref(null)
+const replayVideo = ref(null)
 
 // 数据状态
 const overallScore = ref(85)
 const selectedPeriod = ref('current')
 const trendDimension = ref('overall')
+const showDetailDialog = ref(false)
+const showReplayDialog = ref(false)
+const currentRecord = ref(null)
+const replayVideoSrc = ref('')
 
 // 时间周期选项
 const periods = [
@@ -332,25 +460,27 @@ const recentRecords = ref([
     id: 1,
     date: '2024-01-20',
     type: 'simulation',
+    company: '字节跳动',
     position: '前端开发',
     duration: '35分钟',
-    score: 85
+    score: 85,
+    qaRecords: [
+      {
+        timestamp: '14:30:15',
+        question: '请做一下自我介绍',
+        answer: '我是一名前端开发工程师，有3年的开发经验...',
+        feedback: '自我介绍结构清晰，但可以更突出与岗位的匹配度'
+      }
+    ]
   },
   {
     id: 2,
     date: '2024-01-19',
     type: 'practice',
+    company: '模拟公司',
     position: '前端开发',
     duration: '28分钟',
     score: 82
-  },
-  {
-    id: 3,
-    date: '2024-01-18',
-    type: 'simulation',
-    position: '全栈开发',
-    duration: '40分钟',
-    score: 78
   }
 ])
 
@@ -361,38 +491,164 @@ const personalAdvice = ref([
     title: '优势保持',
     content: '您的专业知识和职业素养表现优秀，这是您的核心竞争力。建议继续保持并深化这些优势。',
     action: 'knowledge',
-    actionText: '查看知识库'
+    actionText: '查看知识库',
+    actionData: { category: 'advanced' }
   },
   {
     type: 'warning',
     title: '重点提升',
     content: '应变能力是您目前的相对短板，建议通过压力面试练习来提升这方面的能力。',
     action: 'practice',
-    actionText: '开始压力练习'
+    actionText: '开始压力练习',
+    actionData: { type: 'stress', difficulty: 'hard' }
   },
   {
     type: 'info',
     title: '学习建议',
     content: '基于您的面试表现，推荐学习《程序员面试宝典》中的行为面试章节，提升软技能。',
     action: 'learning',
-    actionText: '查看学习资源'
+    actionText: '查看学习资源',
+    actionData: { resource: 'interview-guide', chapter: 'behavioral' }
   }
 ])
 
-// 初始化雷达图
+// 方法
+const changePeriod = (period) => {
+  selectedPeriod.value = period
+  updateRadarChart()
+}
+
+const updateTrendChart = () => {
+  if (!trendChartInstance) return
+
+  // TODO: 根据选择的维度更新趋势图数据
+  // const data = await apiService.performance.getTrendData(trendDimension.value)
+
+  // 模拟更新数据
+  const dates = []
+  const scores = []
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    dates.push(date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }))
+    scores.push(Math.floor(Math.random() * 15 + 75 + i * 0.3))
+  }
+
+  trendChartInstance.setOption({
+    xAxis: { data: dates },
+    series: [{ data: scores }]
+  })
+}
+
+const startTargetedPractice = (metricName) => {
+  ElMessage.success(`正在为您准备${metricName}的专项练习...`)
+
+  // 根据不同指标跳转到相应的练习
+  const practiceRoutes = {
+    '专业知识': '/dashboard/knowledge-base?category=technical',
+    '表达能力': '/dashboard/interview-practice?focus=expression',
+    '逻辑思维': '/dashboard/interview-practice?focus=logic',
+    '应变能力': '/dashboard/interview-practice?type=stress',
+    '职业素养': '/dashboard/personalized-learning?focus=professional'
+  }
+
+  const route = practiceRoutes[metricName]
+  if (route) {
+    router.push(route)
+  }
+}
+
+const viewDetail = (record) => {
+  currentRecord.value = record
+  showDetailDialog.value = true
+
+  // 延迟初始化详情图表
+  nextTick(() => {
+    initDetailCharts()
+  })
+}
+
+const replay = (record) => {
+  // TODO: 从后端获取回放视频URL
+  // replayVideoSrc.value = await apiService.interview.getReplayUrl(record.id)
+
+  // 模拟视频URL
+  replayVideoSrc.value = '/mock-interview-replay.mp4'
+  currentRecord.value = record
+  showReplayDialog.value = true
+
+  ElMessage.info('正在加载面试回放...')
+}
+
+const playFromTimestamp = (timestamp) => {
+  if (replayVideo.value) {
+    // 将时间戳转换为秒数
+    const parts = timestamp.split(':')
+    const seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2])
+    replayVideo.value.currentTime = seconds
+    replayVideo.value.play()
+  }
+}
+
+const onVideoLoaded = () => {
+  ElMessage.success('视频加载完成')
+}
+
+const handleAdviceAction = (action, actionData) => {
+  switch (action) {
+    case 'knowledge':
+      router.push(`/dashboard/knowledge-base?category=${actionData.category}`)
+      break
+    case 'practice':
+      if (actionData.type === 'stress') {
+        ElMessage.success('正在为您准备压力面试场景...')
+        router.push(`/dashboard/interview-practice?type=${actionData.type}&difficulty=${actionData.difficulty}`)
+      } else {
+        router.push('/dashboard/interview-practice')
+      }
+      break
+    case 'learning':
+      router.push(`/dashboard/personalized-learning?resource=${actionData.resource}&chapter=${actionData.chapter}`)
+      break
+    default:
+      ElMessage.info('功能开发中...')
+  }
+}
+
+const getScoreColor = (score) => {
+  if (score >= 90) return '#67c23a'
+  if (score >= 80) return '#409eff'
+  if (score >= 70) return '#e6a23c'
+  return '#f56c6c'
+}
+
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 图表初始化方法
 const initRadarChart = () => {
   if (!radarChart.value) return
 
   radarChartInstance = echarts.init(radarChart.value)
+  updateRadarChart()
+}
+
+const updateRadarChart = () => {
+  if (!radarChartInstance) return
 
   const option = {
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderColor: 'rgba(255, 255, 255, 0.2)',
-      textStyle: {
-        color: '#fff'
-      }
+      textStyle: { color: '#fff' }
     },
     radar: {
       indicator: [
@@ -405,72 +661,36 @@ const initRadarChart = () => {
       center: ['50%', '50%'],
       radius: '65%',
       splitNumber: 5,
-      splitLine: {
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.1)'
-        }
-      },
-      splitArea: {
-        areaStyle: {
-          color: ['rgba(64, 158, 255, 0.05)', 'rgba(64, 158, 255, 0.1)']
-        }
-      },
-      axisLine: {
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.2)'
-        }
-      },
-      axisLabel: {
-        color: 'var(--text-secondary)'
-      }
+      splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
+      splitArea: { areaStyle: { color: ['rgba(64, 158, 255, 0.05)', 'rgba(64, 158, 255, 0.1)'] } },
+      axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+      axisLabel: { color: 'var(--text-secondary)' }
     },
-    series: [
-      {
-        name: '能力评分',
-        type: 'radar',
-        data: [
-          {
-            value: [90, 85, 88, 82, 92],
-            name: '当前能力',
-            lineStyle: {
-              color: '#409eff',
-              width: 2
-            },
-            areaStyle: {
-              color: 'rgba(64, 158, 255, 0.3)'
-            },
-            itemStyle: {
-              color: '#409eff'
-            }
-          },
-          {
-            value: [85, 80, 82, 78, 88],
-            name: '上月能力',
-            lineStyle: {
-              color: '#67c23a',
-              width: 2,
-              type: 'dashed'
-            },
-            areaStyle: {
-              color: 'rgba(103, 194, 58, 0.2)'
-            },
-            itemStyle: {
-              color: '#67c23a'
-            }
-          }
-        ]
-      }
-    ]
+    series: [{
+      name: '能力评分',
+      type: 'radar',
+      data: [
+        {
+          value: [90, 85, 88, 82, 92],
+          name: '当前能力',
+          lineStyle: { color: '#409eff', width: 2 },
+          areaStyle: { color: 'rgba(64, 158, 255, 0.3)' },
+          itemStyle: { color: '#409eff' }
+        },
+        {
+          value: [85, 80, 82, 78, 88],
+          name: '上月能力',
+          lineStyle: { color: '#67c23a', width: 2, type: 'dashed' },
+          areaStyle: { color: 'rgba(103, 194, 58, 0.2)' },
+          itemStyle: { color: '#67c23a' }
+        }
+      ]
+    }]
   }
 
   radarChartInstance.setOption(option)
-
-  // TODO: 从后端获取真实数据
-  // const data = await apiService.analysis.getReport(currentInterviewId)
-  // 更新图表数据
 }
 
-// 初始化趋势图
 const initTrendChart = () => {
   if (!trendChart.value) return
 
@@ -478,8 +698,6 @@ const initTrendChart = () => {
 
   const dates = []
   const scores = []
-
-  // 生成模拟数据
   for (let i = 29; i >= 0; i--) {
     const date = new Date()
     date.setDate(date.getDate() - i)
@@ -492,118 +710,89 @@ const initTrendChart = () => {
       trigger: 'axis',
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       borderColor: 'rgba(255, 255, 255, 0.2)',
-      textStyle: {
-        color: '#fff'
-      }
+      textStyle: { color: '#fff' }
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
     xAxis: {
       type: 'category',
       data: dates,
-      axisLine: {
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.2)'
-        }
-      },
-      axisLabel: {
-        color: 'var(--text-secondary)'
-      }
+      axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+      axisLabel: { color: 'var(--text-secondary)' }
     },
     yAxis: {
       type: 'value',
       min: 60,
       max: 100,
-      axisLine: {
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.2)'
-        }
-      },
-      axisLabel: {
-        color: 'var(--text-secondary)'
-      },
-      splitLine: {
-        lineStyle: {
-          color: 'rgba(255, 255, 255, 0.1)'
-        }
-      }
+      axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+      axisLabel: { color: 'var(--text-secondary)' },
+      splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } }
     },
-    series: [
-      {
-        name: '评分趋势',
-        type: 'line',
-        smooth: true,
-        data: scores,
-        lineStyle: {
-          color: '#409eff',
-          width: 3
-        },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
-          ])
-        },
-        itemStyle: {
-          color: '#409eff'
-        },
-        markLine: {
-          data: [
-            {
-              type: 'average',
-              name: '平均值',
-              label: {
-                formatter: '平均: {c}'
-              }
-            }
-          ],
-          lineStyle: {
-            color: '#67c23a'
-          }
-        }
+    series: [{
+      name: '评分趋势',
+      type: 'line',
+      smooth: true,
+      data: scores,
+      lineStyle: { color: '#409eff', width: 3 },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+          { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
+        ])
+      },
+      itemStyle: { color: '#409eff' },
+      markLine: {
+        data: [{ type: 'average', name: '平均值' }],
+        lineStyle: { color: '#67c23a' }
       }
-    ]
+    }]
   }
 
   trendChartInstance.setOption(option)
 }
 
-// 获取分数颜色
-const getScoreColor = (score) => {
-  if (score >= 90) return '#67c23a'
-  if (score >= 80) return '#409eff'
-  if (score >= 70) return '#e6a23c'
-  return '#f56c6c'
-}
+const initDetailCharts = () => {
+  // 详情雷达图
+  if (detailRadarChart.value && !detailRadarChartInstance) {
+    detailRadarChartInstance = echarts.init(detailRadarChart.value)
+    // 使用当前记录的具体数据
+    const option = {
+      radar: {
+        indicator: [
+          { name: '专业知识', max: 100 },
+          { name: '表达能力', max: 100 },
+          { name: '逻辑思维', max: 100 },
+          { name: '应变能力', max: 100 },
+          { name: '职业素养', max: 100 }
+        ],
+        radius: '65%'
+      },
+      series: [{
+        type: 'radar',
+        data: [{
+          value: [88, 82, 85, 79, 90],
+          name: '本次面试',
+          lineStyle: { color: '#409eff' },
+          areaStyle: { color: 'rgba(64, 158, 255, 0.3)' }
+        }]
+      }]
+    }
+    detailRadarChartInstance.setOption(option)
+  }
 
-// 查看详情
-const viewDetail = (record) => {
-  // TODO: 跳转到详细报告页面
-  console.log('查看详情', record)
-}
-
-// 回放
-const replay = (record) => {
-  // TODO: 跳转到回放页面
-  console.log('回放', record)
-}
-
-// 处理建议操作
-const handleAdviceAction = (action) => {
-  switch (action) {
-    case 'knowledge':
-      router.push('/dashboard/knowledge-base')
-      break
-    case 'practice':
-      router.push('/dashboard/interview-practice')
-      break
-    case 'learning':
-      router.push('/dashboard/personalized-learning')
-      break
+  // 时间线图表
+  if (timelineChart.value && !timelineChartInstance) {
+    timelineChartInstance = echarts.init(timelineChart.value)
+    const option = {
+      xAxis: { type: 'category', data: ['开始', '自我介绍', '技术问答', '项目介绍', '提问环节', '结束'] },
+      yAxis: { type: 'value', max: 100 },
+      series: [{
+        type: 'line',
+        data: [0, 85, 88, 82, 90, 85],
+        lineStyle: { color: '#67c23a' },
+        itemStyle: { color: '#67c23a' }
+      }]
+    }
+    timelineChartInstance.setOption(option)
   }
 }
 
@@ -617,15 +806,15 @@ onMounted(() => {
     window.addEventListener('resize', () => {
       radarChartInstance?.resize()
       trendChartInstance?.resize()
+      detailRadarChartInstance?.resize()
+      timelineChartInstance?.resize()
     })
   })
-
-  // TODO: 加载真实数据
-  // loadPerformanceData()
 })
 </script>
 
 <style scoped>
+/* 保持原有样式，添加新的样式 */
 .performance-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -814,6 +1003,7 @@ onMounted(() => {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-bottom: 15px;
 }
 
 .metric-feedback {
@@ -837,6 +1027,11 @@ onMounted(() => {
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.8;
+}
+
+.metric-actions {
+  margin-top: 15px;
+  text-align: center;
 }
 
 /* 趋势图 */
@@ -882,6 +1077,102 @@ onMounted(() => {
   gap: 15px;
 }
 
+/* 详情对话框 */
+.detail-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 30px;
+}
+
+.detail-section h4 {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 15px;
+}
+
+.analysis-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.chart-container h5 {
+  color: var(--text-primary);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.detail-radar-chart,
+.timeline-chart {
+  height: 300px;
+}
+
+.qa-item {
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+.question,
+.answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.question {
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.answer {
+  color: var(--text-secondary);
+}
+
+.qa-feedback {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.qa-feedback .el-tag {
+  margin-right: 10px;
+}
+
+/* 回放对话框 */
+.replay-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.video-container {
+  text-align: center;
+}
+
+.replay-video {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.replay-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .score-card {
@@ -894,6 +1185,10 @@ onMounted(() => {
   }
 
   .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-charts {
     grid-template-columns: 1fr;
   }
 }

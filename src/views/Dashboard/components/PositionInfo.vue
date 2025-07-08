@@ -210,6 +210,7 @@
           v-for="resource in positionData.resources"
           :key="resource.id"
           class="resource-item"
+          @click="openResource(resource)"
         >
           <el-icon :size="24" :color="resource.color">
             <component :is="resource.icon" />
@@ -218,8 +219,8 @@
             <h5>{{ resource.title }}</h5>
             <p>{{ resource.description }}</p>
           </div>
-          <el-button type="primary" size="small" @click="openResource(resource)">
-            查看
+          <el-button type="primary" size="small">
+            {{ resource.buttonText || '查看' }}
           </el-button>
         </div>
       </div>
@@ -244,7 +245,7 @@
 </template>
 
 <script setup>
-import { ref,  onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -420,21 +421,27 @@ const positionDataMap = {
         icon: 'Link',
         color: '#409eff',
         title: 'LeetCode算法练习',
-        description: '提升算法能力的最佳平台'
+        description: '提升算法能力的最佳平台',
+        url: 'https://leetcode.cn/',
+        buttonText: '立即练习'
       },
       {
         id: 2,
         icon: 'Document',
         color: '#67c23a',
-        title: '前端面试宝典',
-        description: '系统整理的前端面试知识点'
+        title: 'MDN Web文档',
+        description: 'Web开发最权威的技术文档',
+        url: 'https://developer.mozilla.org/zh-CN/',
+        buttonText: '查看文档'
       },
       {
         id: 3,
         icon: 'Collection',
         color: '#e6a23c',
-        title: '技术博客推荐',
-        description: '优质技术博客和学习资源'
+        title: 'GitHub热门项目',
+        description: '学习优秀开源项目源码',
+        url: 'https://github.com/trending',
+        buttonText: '浏览项目'
       }
     ]
   },
@@ -559,15 +566,28 @@ const positionDataMap = {
         id: 1,
         icon: 'Link',
         color: '#409eff',
-        title: 'CFA学习资料',
-        description: '金融分析师必备认证'
+        title: 'CFA官方网站',
+        description: '金融分析师必备认证',
+        url: 'https://www.cfainstitute.org/',
+        buttonText: '了解更多'
       },
       {
         id: 2,
         icon: 'Document',
         color: '#67c23a',
-        title: '金融建模指南',
-        description: 'Excel和Python金融建模教程'
+        title: '万得资讯(Wind)',
+        description: '专业金融数据和分析平台',
+        url: 'https://www.wind.com.cn/',
+        buttonText: '访问平台'
+      },
+      {
+        id: 3,
+        icon: 'TrendCharts',
+        color: '#e6a23c',
+        title: '东方财富网',
+        description: '专业财经资讯和投资工具',
+        url: 'http://www.eastmoney.com/',
+        buttonText: '查看资讯'
       }
     ]
   },
@@ -690,17 +710,30 @@ const positionDataMap = {
     resources: [
       {
         id: 1,
-        icon: 'Link',
+        icon: 'School',
         color: '#409eff',
-        title: '教师资格证备考',
-        description: '教师必备职业资格'
+        title: '中国教师资格网',
+        description: '教师资格证考试官方网站',
+        url: 'http://www.jszg.edu.cn/',
+        buttonText: '考试报名'
       },
       {
         id: 2,
-        icon: 'Collection',
+        icon: 'Document',
         color: '#67c23a',
-        title: '优秀教案分享',
-        description: '各学科优秀教学设计'
+        title: '学科网',
+        description: '优质教学资源和素材',
+        url: 'https://www.zxxk.com/',
+        buttonText: '获取资源'
+      },
+      {
+        id: 3,
+        icon: 'VideoCamera',
+        color: '#e6a23c',
+        title: '中国大学MOOC',
+        description: '在线教育平台和课程',
+        url: 'https://www.icourse163.org/',
+        buttonText: '学习课程'
       }
     ]
   }
@@ -742,31 +775,53 @@ const viewQuestions = () => {
 
 // 下载指南
 const downloadGuide = () => {
-  // TODO: 实现下载功能
-  ElMessage.info('准备指南生成中...')
+  const guideName = `${positionData.value.title}面试准备指南.pdf`
+
+  // TODO: 实现真实的下载功能
+  // const response = await apiService.position.downloadGuide(route.params.type)
+  // downloadFile(response, guideName)
+
+  ElMessage.success(`正在生成${guideName}...`)
+  setTimeout(() => {
+    ElMessage.info('指南生成完成，已开始下载')
+    // 模拟下载
+    const link = document.createElement('a')
+    link.download = guideName
+    link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent('面试准备指南内容...')
+    link.click()
+  }, 2000)
 }
 
 // 打开资源
 const openResource = (resource) => {
-  // TODO: 打开相应资源
-  ElMessage.info(`打开资源：${resource.title}`)
+  if (resource.url) {
+    window.open(resource.url, '_blank')
+    ElMessage.success(`正在跳转到${resource.title}`)
+  } else {
+    ElMessage.info(`打开资源：${resource.title}`)
+  }
 }
 
 // 加载岗位数据
 const loadPositionData = async () => {
-  const type = route.params.type
+  const type = route.params.type || 'it'
 
   try {
     // TODO: 调用后端API获取岗位信息
-    // const data = await apiService.question.getPositionInfo(type)
-    // positionData.value = data
+    // const response = await apiService.position.getInfo(type)
+    // positionData.value = response.data
 
     // 使用模拟数据
     if (positionDataMap[type]) {
       positionData.value = positionDataMap[type]
+      ElMessage.success('岗位信息加载完成')
+    } else {
+      ElMessage.warning('未找到该岗位信息，显示默认内容')
+      positionData.value = positionDataMap.it
     }
-  } catch {
+  } catch (error) {
     ElMessage.error('加载岗位信息失败')
+    console.error('Load position data error:', error)
   }
 }
 
@@ -1088,6 +1143,7 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .resource-item:hover {
