@@ -49,8 +49,8 @@
               :key="index"
               class="step"
               :class="{
-                'active': currentStep >= index + 1,
-                'current': currentStep === index + 1
+                active: currentStep >= index + 1,
+                current: currentStep === index + 1,
               }"
             >
               <div class="step-number">
@@ -90,9 +90,9 @@
               />
             </el-form-item>
 
-            <el-form-item label="毕业年份" prop="graduationYear">
+            <el-form-item label="毕业年份" prop="graduation_year">
               <el-date-picker
-                v-model="formData.graduationYear"
+                v-model="formData.graduation_year"
                 type="year"
                 placeholder="选择毕业年份"
                 format="YYYY"
@@ -176,12 +176,12 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="意向岗位" prop="targetPosition">
-              <el-checkbox-group v-model="formData.targetPosition">
+            <el-form-item label="意向岗位" prop="target_position">
+              <el-checkbox-group v-model="formData.target_position">
                 <el-checkbox
                   v-for="position in positionOptions"
                   :key="position.value"
-                  :label="position.value"
+                  :value="position.value"
                   @change="() => setPenguinState('thinking')"
                 >
                   {{ position.label }}
@@ -193,13 +193,7 @@
 
         <!-- 按钮区域 -->
         <div class="button-group">
-          <el-button
-            v-if="currentStep > 1"
-            @click="previousStep"
-            size="large"
-          >
-            上一步
-          </el-button>
+          <el-button v-if="currentStep > 1" @click="previousStep" size="large"> 上一步 </el-button>
           <button
             v-if="currentStep < 3"
             type="button"
@@ -236,22 +230,19 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  School,
-  Loading,
-  CircleCheck
-} from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user' // 引入 user store
+import { School, Loading, CircleCheck } from '@element-plus/icons-vue'
 import gsap from 'gsap'
 
 const router = useRouter()
 const formRef = ref()
+const userStore = useUserStore() // 获取 store 实例
+
 const currentStep = ref(1)
 const loading = ref(false)
 const penguinRef = ref(null)
 
 const steps = ['基本信息', '教育背景', '专业信息']
-
-// 企鹅状态和消息
 const penguinState = ref('idle')
 const penguinMessage = ref('Hi！我是你的AI助手小P，让我来帮你完成资料填写吧！')
 
@@ -265,7 +256,7 @@ const majorOptions = {
     '网络工程',
     '信息安全',
     '物联网工程',
-    '数据科学与大数据技术'
+    '数据科学与大数据技术',
   ],
   electronic: [
     '电子信息工程',
@@ -273,7 +264,7 @@ const majorOptions = {
     '微电子科学与工程',
     '集成电路设计',
     '电子科学与技术',
-    '光电信息科学与工程'
+    '光电信息科学与工程',
   ],
   economics: [
     '经济学',
@@ -283,17 +274,9 @@ const majorOptions = {
     '市场营销',
     '人力资源管理',
     '财务管理',
-    '国际经济与贸易'
+    '国际经济与贸易',
   ],
-  literature: [
-    '汉语言文学',
-    '英语',
-    '新闻学',
-    '传播学',
-    '广告学',
-    '编辑出版学',
-    '网络与新媒体'
-  ],
+  literature: ['汉语言文学', '英语', '新闻学', '传播学', '广告学', '编辑出版学', '网络与新媒体'],
   science: [
     '数学与应用数学',
     '物理学',
@@ -301,27 +284,11 @@ const majorOptions = {
     '生物科学',
     '统计学',
     '应用物理学',
-    '材料科学与工程'
+    '材料科学与工程',
   ],
-  medical: [
-    '临床医学',
-    '口腔医学',
-    '中医学',
-    '药学',
-    '护理学',
-    '医学影像学',
-    '预防医学'
-  ],
-  art: [
-    '视觉传达设计',
-    '环境设计',
-    '产品设计',
-    '数字媒体艺术',
-    '动画',
-    '美术学',
-    '音乐学'
-  ],
-  other: []
+  medical: ['临床医学', '口腔医学', '中医学', '药学', '护理学', '医学影像学', '预防医学'],
+  art: ['视觉传达设计', '环境设计', '产品设计', '数字媒体艺术', '动画', '美术学', '音乐学'],
+  other: [],
 }
 
 // 岗位选项
@@ -333,53 +300,41 @@ const positionOptions = [
   { label: '市场', value: '市场' },
   { label: '数据分析', value: '数据分析' },
   { label: '人力资源', value: '人力资源' },
-  { label: '财务', value: '财务' }
+  { label: '财务', value: '财务' },
 ]
 
-// 计算属性
 const progressWidth = computed(() => {
-  return `${(currentStep.value / steps.length) * 100}%`
+  return `${((currentStep.value - 1) / steps.length) * 100}%` // 修正进度条逻辑
 })
 
 const availableMajors = computed(() => {
   return majorOptions[formData.majorCategory] || []
 })
 
-// 表单数据
 const formData = reactive({
   age: null,
-  graduationYear: '',
+  graduation_year: '',
   education: '',
   school: '',
   majorCategory: '',
   major: '',
-  targetPosition: []
+  target_position: [],
 })
 
 // 验证规则
 const rules = reactive({
   age: [
     { required: true, message: '请输入年龄', trigger: 'blur' },
-    { type: 'number', min: 18, max: 60, message: '年龄必须在18-60之间', trigger: 'blur' }
+    { type: 'number', min: 18, max: 60, message: '年龄必须在18-60之间', trigger: 'blur' },
   ],
-  graduationYear: [
-    { required: true, message: '请选择毕业年份', trigger: 'change' }
+  graduation_year: [{ required: true, message: '请选择毕业年份', trigger: 'change' }],
+  education: [{ required: true, message: '请选择学历', trigger: 'change' }],
+  school: [{ required: true, message: '请输入院校名称', trigger: 'blur' }],
+  majorCategory: [{ required: true, message: '请选择专业类别', trigger: 'change' }],
+  major: [{ required: true, message: '请选择或输入具体专业', trigger: 'change' }],
+  target_position: [
+    { type: 'array', required: true, message: '请至少选择一个意向岗位', trigger: 'change' },
   ],
-  education: [
-    { required: true, message: '请选择学历', trigger: 'change' }
-  ],
-  school: [
-    { required: true, message: '请输入院校名称', trigger: 'blur' }
-  ],
-  majorCategory: [
-    { required: true, message: '请选择专业类别', trigger: 'change' }
-  ],
-  major: [
-    { required: true, message: '请选择或输入具体专业', trigger: 'change' }
-  ],
-  targetPosition: [
-    { type: 'array', required: true, message: '请至少选择一个意向岗位', trigger: 'change' }
-  ]
 })
 
 // 设置企鹅状态
@@ -392,7 +347,7 @@ const setPenguinState = (state) => {
     thinking: '嗯...让我想想...',
     curious: '哇，这个选择很有意思呢！',
     shy: '我...我不看...（捂眼）',
-    happy: '太棒了！你完成得很好！'
+    happy: '太棒了！你完成得很好！',
   }
 
   penguinMessage.value = messages[state] || messages.idle
@@ -403,19 +358,22 @@ const setPenguinState = (state) => {
       scale: state === 'happy' ? 1.1 : 1,
       rotation: state === 'curious' ? 5 : 0,
       duration: 0.3,
-      ease: 'power2.out'
+      ease: 'power2.out',
     })
   }
 }
 
 // 监听密码输入（如果有密码字段）
-watch(() => formData.password, (newVal) => {
-  if (newVal) {
-    setPenguinState('shy')
-  } else {
-    setPenguinState('idle')
-  }
-})
+watch(
+  () => formData.password,
+  (newVal) => {
+    if (newVal) {
+      setPenguinState('shy')
+    } else {
+      setPenguinState('idle')
+    }
+  },
+)
 
 // 专业类别改变
 const handleMajorCategoryChange = (value) => {
@@ -434,7 +392,7 @@ const handleMajorCategoryChange = (value) => {
         science: '理工科专业，探索世界的奥秘！',
         medical: '医学类专业，救死扶伤，很伟大！',
         art: '艺术类专业，创造美好的世界！',
-        other: '选择适合自己的专业最重要！'
+        other: '选择适合自己的专业最重要！',
       }
 
       penguinMessage.value = suggestions[value] || '这个专业不错哦！'
@@ -442,38 +400,37 @@ const handleMajorCategoryChange = (value) => {
   }
 }
 
-// 下一步
 const nextStep = async () => {
   const fieldsToValidate = {
-    1: ['age', 'graduationYear'],
+    1: ['age', 'graduation_year'],
     2: ['education', 'school'],
-    3: ['majorCategory', 'major', 'targetPosition']
   }
-
-  try {
-    await formRef.value?.validateField(fieldsToValidate[currentStep.value])
-    currentStep.value++
-
-    // 更新企鹅状态
-    if (currentStep.value === 3) {
-      setPenguinState('curious')
-      penguinMessage.value = '马上就要完成了，加油！'
-    } else {
+  const fields = fieldsToValidate[currentStep.value]
+  if (fields) {
+    try {
+      await formRef.value?.validateField(fields)
+      currentStep.value++
+      if (currentStep.value === 3) {
+        setPenguinState('curious')
+        penguinMessage.value = '马上就要完成了，加油！'
+      } else {
+        setPenguinState('thinking')
+      }
+    } catch (error) {
       setPenguinState('thinking')
+      penguinMessage.value = '还有一些信息需要填写哦~'
     }
-  } catch (error) {
-    setPenguinState('thinking')
-    penguinMessage.value = '还有一些信息需要填写哦~'
   }
 }
 
-// 上一步
 const previousStep = () => {
-  currentStep.value--
-  setPenguinState('idle')
+  if (currentStep.value > 1) {
+    currentStep.value--
+    setPenguinState('idle') // 让企鹅恢复空闲状态
+    penguinMessage.value = '好的，我们返回上一步。'
+  }
 }
 
-// 提交表单
 const handleSubmit = async () => {
   const valid = await formRef.value?.validate()
   if (!valid) {
@@ -486,20 +443,29 @@ const handleSubmit = async () => {
   setPenguinState('happy')
   penguinMessage.value = '太棒了！正在保存你的信息...'
 
-  // 模拟提交请求
-  setTimeout(() => {
+  console.log('即将发送到后端的用户资料：', JSON.stringify(formData, null, 2))
+
+  try {
+    // 1. 调用 store 的 action，并接收返回的最新用户信息
+    const updatedUser = await userStore.updateProfile(formData)
+
+    // 2. 直接根据返回的数据进行判断，不再依赖store的被动更新
+    if (updatedUser && updatedUser.has_profile) {
+      ElMessage.success('个人信息设置成功！即将跳转...')
+
+      // 3. 延迟跳转，给用户看提示的时间
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1500)
+    } else {
+      // 如果因为某种原因后端返回的数据表明profile未完成，则提示错误
+      ElMessage.error('状态更新失败，请刷新后重试')
+    }
+  } catch (error) {
+    ElMessage.error('保存失败，请重试')
+  } finally {
     loading.value = false
-    ElMessage.success('个人信息设置成功！')
-
-    // 保存状态
-    localStorage.setItem('hasProfile', 'true')
-    localStorage.setItem('userProfile', JSON.stringify(formData))
-
-    // 跳转到主应用
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 1000)
-  }, 1500)
+  }
 }
 
 // 初始化企鹅动画
@@ -508,7 +474,7 @@ const initPenguinAnimation = () => {
   setInterval(() => {
     if (penguinState.value !== 'shy') {
       const eyes = document.querySelectorAll('.eye')
-      eyes.forEach(eye => {
+      eyes.forEach((eye) => {
         eye.style.transform = 'scaleY(0.1)'
         setTimeout(() => {
           eye.style.transform = 'scaleY(1)'
@@ -523,7 +489,7 @@ const initPenguinAnimation = () => {
     duration: 2,
     ease: 'power1.inOut',
     yoyo: true,
-    repeat: -1
+    repeat: -1,
   })
 }
 
@@ -755,8 +721,13 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-10px); }
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
 }
 
 /* 资料卡片样式 */
@@ -838,8 +809,13 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1.2); }
-  50% { transform: scale(1.3); }
+  0%,
+  100% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(1.3);
+  }
 }
 
 /* 表单样式优化 */
@@ -921,7 +897,8 @@ onMounted(() => {
 }
 
 @keyframes bubble-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
     opacity: 0.6;
   }

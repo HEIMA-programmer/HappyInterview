@@ -138,9 +138,10 @@ export default {
 }
 </script>
 <script setup>
-import { ref, reactive, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { useUserStore } from '@/stores/user'; // 引入 user store
 import {
   User,
   Lock,
@@ -148,30 +149,29 @@ import {
   Loading,
   ChatDotRound,
   Connection
-} from '@element-plus/icons-vue'
+} from '@element-plus/icons-vue';
 
-const router = useRouter()
-const formRef = ref()
-const isLogin = ref(true)
-const loading = ref(false)
-const rememberMe = ref(false)
-const agreeTerms = ref(false)
-const showPassword = ref(false)
+const router = useRouter();
+const formRef = ref();
+const userStore = useUserStore(); // 获取 store 实例
 
-// 表单数据
+const isLogin = ref(true);
+const loading = ref(false);
+const rememberMe = ref(false);
+const agreeTerms = ref(false);
+const showPassword = ref(false);
+
 const formData = reactive({
   username: '',
   password: '',
   confirmPassword: '',
   email: ''
-})
+});
 
-// 监听密码输入，控制企鹅动画
 watch(() => formData.password, (newVal) => {
-  showPassword.value = newVal.length > 0
-})
+  showPassword.value = newVal.length > 0;
+});
 
-// 表单验证规则
 const rules = reactive({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -186,9 +186,9 @@ const rules = reactive({
     {
       validator: (rule, value, callback) => {
         if (value !== formData.password) {
-          callback(new Error('两次输入的密码不一致'))
+          callback(new Error('两次输入的密码不一致'));
         } else {
-          callback()
+          callback();
         }
       },
       trigger: 'blur'
@@ -196,54 +196,70 @@ const rules = reactive({
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] }
   ]
-})
+});
 
-// 切换登录/注册
 const switchMode = () => {
-  isLogin.value = !isLogin.value
-  formRef.value?.resetFields()
-}
+  isLogin.value = !isLogin.value;
+  formRef.value?.resetFields();
+};
 
-// 提交表单
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
+  const valid = await formRef.value?.validate();
+  if (!valid) return;
 
   if (!isLogin.value && !agreeTerms.value) {
-    ElMessage.warning('请先同意用户协议和隐私政策')
-    return
+    ElMessage.warning('请先同意用户协议和隐私政策');
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
 
-  // 模拟登录/注册请求
-  setTimeout(() => {
-    loading.value = false
-
+  try {
     if (isLogin.value) {
-      // 模拟登录成功
-      if (formData.username === 'test' && formData.password === '123456') {
-        ElMessage.success('登录成功')
-        localStorage.setItem('isAuthenticated', 'true')
-        router.push('/profile-setup')
+      // 执行登录逻辑
+      const hasProfile = await userStore.login({
+        username: formData.username,
+        password: formData.password
+      });
+
+      ElMessage.success('登录成功！');
+
+      // 根据是否有资料进行跳转
+      if (hasProfile) {
+        router.push('/dashboard');
       } else {
-        ElMessage.error('用户名或密码错误（测试账号：test/123456）')
+        router.push('/profile-setup');
       }
     } else {
-      // 模拟注册成功
-      ElMessage.success('注册成功，请登录')
-      isLogin.value = true
-      formRef.value?.resetFields()
+      // 执行注册逻辑
+      await userStore.register({
+        username: formData.username,
+        password: formData.password,
+        email: formData.email
+      });
+      ElMessage.success('注册成功，请登录');
+      isLogin.value = true; // 切换到登录模式
+      formRef.value?.resetFields();
     }
-  }, 1500)
-}
+  } catch (error) {
+    // 错误消息已由API层的拦截器处理，这里可以留空或做额外处理
+  } finally {
+    loading.value = false;
+  }
+};
 
-// 第三方登录
 const handleSocialLogin = (type) => {
-  ElMessage.info(`${type === 'wechat' ? '微信' : 'QQ'}登录功能开发中...`)
-}
+  ElMessage.info(`${type === 'wechat' ? '微信' : 'QQ'}登录功能开发中...`);
+};
+
+// 检查用户是否已登录，如果已登录则直接跳转
+onMounted(() => {
+  if (userStore.isAuthenticated) {
+    router.push('/dashboard');
+  }
+});
 </script>
 
 <style scoped>
